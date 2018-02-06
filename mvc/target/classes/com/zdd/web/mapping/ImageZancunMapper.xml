@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zdd.web.dao.ImageZancunMapper">
+  <resultMap id="BaseResultMap" type="com.zdd.web.entity.ImageZancun">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="spsl" jdbcType="VARCHAR" property="spsl" />
+    <result column="yspsl" jdbcType="VARCHAR" property="yspsl" />
+    <result column="orderid" jdbcType="BIGINT" property="orderid" />
+    <result column="attrs" jdbcType="VARCHAR" property="attrs" />
+    <result column="sizescale" jdbcType="DOUBLE" property="sizescale" />
+    <result column="errorrangelow" jdbcType="DOUBLE" property="errorrangelow" />
+    <result column="errorrangehigh" jdbcType="DOUBLE" property="errorrangehigh" />
+    <result column="pixelup" jdbcType="INTEGER" property="pixelup" />
+    <result column="pixellow" jdbcType="INTEGER" property="pixellow" />
+    <result column="spmc" jdbcType="VARCHAR" property="spmc" />
+    <result column="filepath" jdbcType="VARCHAR" property="filepath"/>
+  </resultMap>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
+    delete from biz_image_zancun
+    where id = #{id,jdbcType=BIGINT}
+  </delete>
+  <delete id="deleteByOrderId" parameterType="java.lang.Long">
+    delete from biz_image_zancun
+    where orderid=#{orderid,jdbcType=BIGINT}
+  </delete>
+  <insert id="insert" parameterType="com.zdd.web.entity.ImageZancun">
+      <selectKey keyProperty="id" resultType="java.lang.Long" order="AFTER" >
+    select currval('image_zancun_seq')
+    </selectKey>
+    insert into biz_image_zancun ( spsl,  
+      orderid, attrs, sizescale, 
+      errorrangelow, errorrangehigh, pixelup, 
+      pixellow, spmc,filepath)
+    values ( #{spsl,jdbcType=VARCHAR}, 
+      #{orderid,jdbcType=BIGINT}, #{attrs,jdbcType=VARCHAR}, #{sizescale,jdbcType=DOUBLE}, 
+      #{errorrangelow,jdbcType=DOUBLE}, #{errorrangehigh,jdbcType=DOUBLE}, #{pixelup,jdbcType=INTEGER}, 
+      #{pixellow,jdbcType=INTEGER}, #{spmc,jdbcType=VARCHAR},#{filepath,jdbcType=VARCHAR}) 
+  </insert>
+  <update id="updateByPrimaryKey" parameterType="com.zdd.web.entity.ImageZancun">
+    update biz_image_zancun
+    set spsl = #{spsl,jdbcType=VARCHAR},
+      orderid = #{orderid,jdbcType=BIGINT},
+      attrs = #{attrs,jdbcType=VARCHAR},
+      sizescale = #{sizescale,jdbcType=DOUBLE},
+      errorrangelow = #{errorrangelow,jdbcType=DOUBLE},
+      errorrangehigh = #{errorrangehigh,jdbcType=DOUBLE},
+      pixelup = #{pixelup,jdbcType=INTEGER},
+      pixellow = #{pixellow,jdbcType=INTEGER},
+      spmc = #{spmc,jdbcType=VARCHAR}
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select b.id, spsl,(select  COALESCE(sum(img_num),0) from biz_image_detail a where a.order4id=b.id)as yspsl, 
+    orderid, attrs, sizescale, errorrangelow, errorrangehigh, 
+    pixelup, pixellow, spmc,filepath
+    from biz_image_zancun b
+    where id = #{id,jdbcType=BIGINT}
+  </select>
+  <select id="selectAll" resultMap="BaseResultMap">
+    select b.id, spsl,yspsl, orderid, attrs, sizescale, errorrangelow, errorrangehigh, 
+    pixelup, pixellow, spmc
+    from biz_image_zancun b
+  </select>
+  <select id="selectByOrderid" resultMap="BaseResultMap">
+    select id, spsl, (select  COALESCE(sum(img_num),0) from biz_image_detail a where a.order4id=b.id)as yspsl, orderid, attrs, sizescale, errorrangelow, errorrangehigh, 
+    pixelup, pixellow, spmc,filepath
+    from biz_image_zancun b where orderid = #{orderid,jdbcType=BIGINT} order by id
+  </select>
+    <select id="findByOrderId" parameterType="java.lang.Long" resultMap="BaseResultMap">
+  	select id, spsl,(select  COALESCE(sum(img_num),0) from biz_image_detail a where a.order4id=b.id)as yspsl, orderid, attrs, sizescale, errorrangelow, errorrangehigh, 
+    pixelup, pixellow, spmc
+    from biz_image_zancun b
+    where orderid=#{orderid,jdbcType=BIGINT}
+  </select>
+  <select id="selectId" parameterType="java.lang.Long" resultMap="BaseResultMap">
+  	select id from biz_image_zancun
+    where orderid=#{orderid,jdbcType=BIGINT} order by id
+  </select>
+  <select id="selectCountByOrderId" parameterType="java.lang.Long" resultType="java.lang.Integer">
+  		select sum(to_number(spsl, '999999999')) 
+		from biz_image_zancun where orderid=#{orderid,jdbcType=BIGINT}
+  </select>
+  <update id="updateFilePath" parameterType="com.zdd.web.entity.ImageZancun">
+  	update biz_image_zancun set filepath=#{filepath,jdbcType=VARCHAR} 
+  	where id=#{id,jdbcType=BIGINT}
+  </update>
+</mapper>

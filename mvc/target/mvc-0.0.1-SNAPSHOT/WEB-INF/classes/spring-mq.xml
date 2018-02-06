@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" 
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:tx="http://www.springframework.org/schema/tx" 
+	xmlns:dubbo="http://code.alibabatech.com/schema/dubbo"
+	xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee.xsd
+        http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+        http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit-1.6.xsd">
+
+	<!-- 引入配置文件 -->
+    <context:property-placeholder location="classpath:rabbit.properties" ignore-unresolvable="true" />  
+	
+	<!-- 任务执行器 -->
+    <bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+        <property name="corePoolSize" value="20" />
+    </bean>   
+	
+	<!-- 配置connect-factory，指定连接rabbit server的参数 -->
+	<rabbit:connection-factory id="connectionFactory"
+		username="${rabbit.username}" 
+		password="${rabbit.password}" 
+		host="${rabbit.host}" 
+		port="${rabbit.port}"
+		virtual-host="${rabbit.vhost}" 
+		channel-cache-size="${channel.cache.size}" 
+		executor="taskExecutor" 
+		publisher-confirms="true" 
+		publisher-returns="true"/>
+	
+	
+
+	<!-- 通过下面的admin信息，当前productor中的exchange和queue会在rabbitmq服务器上自动生成 -->
+	<rabbit:admin connection-factory="connectionFactory"/>
+	<bean id="messageConverter" class="org.springframework.amqp.support.converter.Jackson2JsonMessageConverter"/>
+	
+	<!-- 队列配置 -->
+	<rabbit:queue name="${queue.my_queue}" durable="true" auto-delete="false" 
+		exclusive="false"></rabbit:queue>
+	
+	<!-- 交换机配置 -->
+	<rabbit:direct-exchange name="${exchange.direct}" durable="true" auto-delete="false">
+	 	<rabbit:bindings>
+			<rabbit:binding queue="${queue.my_queue}" key="${route.my_queue}"></rabbit:binding>
+		</rabbit:bindings>
+	</rabbit:direct-exchange>
+		
+	<bean id="messageConfirm" class="com.zdd.config.rabbit.MessageConfirm"/>
+	<bean id="messageReturn"  class="com.zdd.config.rabbit.MessageReturn"/>
+	
+	<rabbit:template id="rabbitTemplate" 
+		connection-factory="connectionFactory" 
+		message-converter="messageConverter" 
+		exchange="exchange.direct" 
+		reply-timeout="2000" 
+		retry-template="retryTemplate" 
+		mandatory="true" 
+		confirm-callback="messageConfirm" 
+		return-callback="messageReturn"/>
+	
+	<!-- 链接失败重试模板 -->
+	<bean id="retryTemplate" class="org.springframework.retry.support.RetryTemplate">
+		<property name="backOffPolicy">
+			<bean class="org.springframework.retry.backoff.ExponentialBackOffPolicy">
+				<property name="initialInterval" value="5000"/>
+				<property name="multiplier" value="10.0"/>
+				<property name="maxInterval" value="10000"/>
+			</bean>
+		</property>
+		<property name="retryPolicy">
+            <bean class="org.springframework.retry.policy.SimpleRetryPolicy">
+                <property name="maxAttempts" value="3"/>
+            </bean>
+        </property>
+	</bean>
+	
+	<!-- 消费者配置AUTO方式 -->
+	<rabbit:annotation-driven />
+	<bean id="rabbitListenerContainerFactory" 
+		class="org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory">
+		<property name="messageConverter" ref="messageConverter" />
+		<property name="connectionFactory" ref="connectionFactory" />
+		<property name="concurrentConsumers" value="10" />
+		<property name="maxConcurrentConsumers" value="10" />
+		<property name="taskExecutor" ref="taskExecutor" />
+		<property name="prefetchCount" value="1" /> <!-- 每次1个 -->
+		<!--选项: NONE，MANUAL，AUTO 默认：AUTO,当为MANUAL时必须调用Channel.basicAck()来手动应答所有消息 -->
+		<property name="acknowledgeMode" value="AUTO" />
+		<property name="errorHandler" ref="mqErrorHandler" /> <!--处理未捕获异常 -->
+	</bean>
+	<bean id="mqErrorHandler" class="com.zdd.config.rabbit.MQErrorHandler"/>
+</beans>

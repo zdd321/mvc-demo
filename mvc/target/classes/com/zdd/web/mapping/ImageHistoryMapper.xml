@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zdd.web.dao.ImageHistoryMapper">
+  <resultMap id="BaseResultMap" type="com.zdd.web.entity.ImageHistory">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="img_url" jdbcType="VARCHAR" property="img_url" />
+    <result column="smallimg_url" jdbcType="VARCHAR" property="smallimg_url" />
+    <result column="status" jdbcType="VARCHAR" property="status" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="img_num" jdbcType="INTEGER" property="img_num" />
+    <result column="order4id" jdbcType="BIGINT" property="order4id" />
+    <result column="ckb" jdbcType="DOUBLE" property="ckb" />
+    <result column="uuid" jdbcType="VARCHAR" property="uuid" />
+    <result column="lownum" jdbcType="BIGINT" property="lownum"/>
+    <result column="longnum" jdbcType="BIGINT" property="longnum"/>
+    <result column="resize" jdbcType="VARCHAR" property="resize"/>
+    <result column="rectsize" jdbcType="VARCHAR" property="rectsize"/>
+    <result column="hashkey" jdbcType="VARCHAR" property="hashkey"/>
+  </resultMap>
+  
+  <insert id="batchInsert" parameterType="java.util.List">
+  	insert into biz_image_history 
+  	(id, img_url,smallimg_url, status, name,img_num, order4id, ckb, uuid,lownum, longnum,hashkey) 
+    values 
+  	<foreach collection="list" item="item" separator=",">
+  	(#{item.id,jdbcType=BIGINT},
+    #{item.img_url,jdbcType=VARCHAR},
+    #{item.smallimg_url,jdbcType=VARCHAR}, 
+    #{item.status,jdbcType=VARCHAR},
+    #{item.name,jdbcType=VARCHAR}, 
+    #{item.img_num,jdbcType=INTEGER}, 
+    #{item.order4id,jdbcType=BIGINT}, 
+    #{item.ckb,jdbcType=DOUBLE}, 
+    #{item.uuid,jdbcType=VARCHAR},
+    #{item.lownum,jdbcType=BIGINT},
+    #{item.longnum,jdbcType=BIGINT},
+    #{item.hashkey,jdbcType=VARCHAR}
+    )
+    </foreach>
+    
+  </insert>
+  <insert id="insert" parameterType="com.zdd.web.entity.ImageDetail">
+  	insert into biz_image_history 
+  	(id, img_url,smallimg_url, status, name,img_num, order4id, ckb, uuid,lownum, longnum,hashkey) 
+    values 
+    (#{id,jdbcType=BIGINT},
+    #{img_url,jdbcType=VARCHAR},
+    #{smallimg_url,jdbcType=VARCHAR}, 
+    #{status,jdbcType=VARCHAR},
+    #{name,jdbcType=VARCHAR}, 
+    #{img_num,jdbcType=INTEGER}, 
+    #{order4id,jdbcType=BIGINT}, 
+    #{ckb,jdbcType=DOUBLE}, 
+    #{uuid,jdbcType=VARCHAR},
+    #{lownum,jdbcType=BIGINT},
+    #{longnum,jdbcType=BIGINT},
+    #{hashkey,jdbcType=VARCHAR}
+    )
+  </insert>
+</mapper>

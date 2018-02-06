@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zdd.web.dao.ImageDetailMapper">
+  <resultMap id="BaseResultMap" type="com.zdd.web.entity.ImageDetail">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="img_url" jdbcType="VARCHAR" property="img_url" />
+     <result column="smallimg_url" jdbcType="VARCHAR" property="smallimg_url" />
+    <result column="status" jdbcType="VARCHAR" property="status" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="img_num" jdbcType="INTEGER" property="img_num" />
+    <result column="order4id" jdbcType="BIGINT" property="order4id" />
+    <result column="ckb" jdbcType="DOUBLE" property="ckb" />
+    <result column="uuid" jdbcType="VARCHAR" property="uuid" />
+    <result column="lownum" jdbcType="BIGINT" property="lownum"/>
+    <result column="longnum" jdbcType="BIGINT" property="longnum"/>
+    <result column="resize" jdbcType="VARCHAR" property="resize"/>
+    <result column="rectsize" jdbcType="VARCHAR" property="rectsize"/>
+    <result column="hashkey" jdbcType="VARCHAR" property="hashkey"/>
+  </resultMap>
+  <update id="updateFillin" parameterType="java.util.Map">
+    update biz_image_detail
+    set rectsize=#{rectsize,jdbcType=VARCHAR},
+        resize=#{resize,jdbcType=VARCHAR}  
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
+    delete from biz_image_detail
+    where id = #{id,jdbcType=BIGINT}
+  </delete>
+  
+  <delete id="deleteByOrderId" parameterType="java.lang.Long">
+    delete from biz_image_detail a where a.order4id in 
+    (select id from biz_image_zancun  b where b.orderid=#{orderid,jdbcType=BIGINT})
+  </delete>
+  
+    <delete id="deleteByUuid" parameterType="String">
+  delete from biz_image_detail
+  where uuid=#{uuid,jdbcType=VARCHAR}
+  </delete>
+    <insert id="insert" parameterType="com.zdd.web.entity.ImageDetail">
+    <selectKey keyProperty="id" resultType="java.lang.Long" order="BEFORE" >
+    select nextval('img_detail_id_seq')
+    </selectKey>
+    insert into biz_image_detail (id, img_url,smallimg_url, status, name,
+      img_num, order4id, ckb, uuid,lownum, longnum,hashkey)
+    values ( #{id,jdbcType=BIGINT},#{img_url,jdbcType=VARCHAR},#{smallimg_url,jdbcType=VARCHAR}, #{status,jdbcType=VARCHAR},#{name,jdbcType=VARCHAR}, 
+      #{img_num,jdbcType=INTEGER}, #{order4id,jdbcType=BIGINT}, #{ckb,jdbcType=DOUBLE}, #{uuid,jdbcType=VARCHAR},
+      #{lownum,jdbcType=BIGINT},#{longnum,jdbcType=BIGINT},#{hashkey,jdbcType=VARCHAR})
+  </insert>
+  <update id="updateByPrimaryKey" parameterType="com.zdd.web.entity.ImageDetail">
+    update biz_image_detail
+    set img_url = #{img_url,jdbcType=VARCHAR},
+      status = #{status,jdbcType=VARCHAR},
+      img_num = #{img_num,jdbcType=INTEGER},
+      order4id = #{order4id,jdbcType=BIGINT},
+      ckb = #{ckb,jdbcType=DOUBLE},
+      uuid = #{uuid,jdbcType=VARCHAR},
+      lownum=#{lownum,jdbcType=BIGINT},
+      longnum=#{longnum,jdbcType=BIGINT}
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+  <update id="updateNumById" parameterType="com.zdd.web.entity.ImageDetail">
+    update biz_image_detail
+    set img_num = #{img_num,jdbcType=INTEGER} where id = #{id,jdbcType=BIGINT}
+  </update>
+  <update id="updateResize" parameterType="com.zdd.web.entity.ImageDetail">
+  	update biz_image_detail 
+  	set resize=#{resize,jdbcType=VARCHAR} 
+  	where id=#{id,jdbcType=BIGINT}
+  </update>
+  <update id="updateCutInfo" parameterType="com.zdd.web.entity.ImageDetail">
+  	update biz_image_detail
+  	set rectsize=null,resize=null
+  	where order4id=#{order4id,jdbcType=BIGINT}
+  </update>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select id, img_url,smallimg_url, status, img_num, order4id, ckb, uuid,lownum, longnum
+    from biz_image_detail
+    where id = #{id,jdbcType=BIGINT} 
+  </select>
+  <select id="selectByresize" parameterType="java.lang.Long" resultMap="BaseResultMap">
+  	select bid.id,bid.resize from biz_image_detail bid 
+  	left join biz_image_zancun biz on biz.id=bid.order4id 
+  	where (bid.ckb &lt; biz.errorrangelow OR 
+	bid.ckb &gt;errorrangehigh) and biz.filepath not like '处理%' 
+	and biz.orderid=#{orderid,jdbcType=BIGINT}
+  </select>
+  <select id="selectAll" resultMap="BaseResultMap">
+    select id, img_url,smallimg_url, status, img_num, order4id, ckb, uuid,lownum, longnum
+    from biz_image_detail ORDER BY id
+  </select>
+    <select id="selectAttrsAndImgNumByOrderId" resultType="java.util.HashMap" parameterType="java.lang.Long">
+  select a.img_url,a.id,a.name,a.resize,a.rectsize, b.id as "order4Id",
+  "split_part"(b.attrs,',',1) as "chicun",b.spmc as "spmc",
+  "split_part"(b.attrs,',',2)||'-'||"split_part"(b.attrs,',',1)||'-'||a.img_num as"SecondName" 
+  from biz_image_detail a left join biz_image_zancun b on a.order4id=b."id" 
+  where b.orderid=#{orderId,jdbcType=BIGINT} 
+  group by a.img_url, a.id,a.name,a.resize,a.rectsize, b.spmc,b.attrs,a.img_num,b.id
+  </select>
+  <select id="selectfilepathByorderId" resultType="java.util.HashMap" parameterType="java.lang.Long">
+  	select img_url,b.filepath as filepath,img_num,name
+	from biz_image_detail a LEFT join biz_image_zancun b on b.id=a.order4id
+	where b.orderid=#{orderId,jdbcType=BIGINT} 
+  </select>
+    <select id="selectByOrder4Id" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select id, name,img_url,smallimg_url, status, img_num, order4id, ckb, uuid,lownum, longnum,hashkey,rectsize,resize
+    from biz_image_detail
+    where order4id = #{order4id,jdbcType=BIGINT} ORDER BY status desc
+  </select>
+  <select id="selectByOrder4IdCut" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select id, img_url,smallimg_url, status, img_num, order4id, ckb, uuid,lownum, longnum,hashkey,rectsize,resize
+    from biz_image_detail
+    where order4id = #{order4id,jdbcType=BIGINT} ORDER BY id desc
+  </select>
+  <select id="selectByOrder4IdAndStatus" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select id, img_url,smallimg_url, status, img_num, order4id, ckb, uuid,lownum, longnum
+    from biz_image_detail
+    where order4id = #{order4id,jdbcType=BIGINT} and status='3' ORDER BY status desc
+  </select>
+  <select id="countBystatus" parameterType="java.lang.Long" resultType="int">
+  	select COALESCE(count(1),0) from biz_image_detail
+  	where status='2' and order4id=#{id,jdbcType=BIGINT}
+  </select>
+    <select id="findByUuid" parameterType="String" resultMap="BaseResultMap">
+  select id, img_url, status, img_num, order4id, ckb, uuid,lownum, longnum
+  from biz_image_detail
+  where uuid=#{uuid,jdbcType=VARCHAR} 
+  </select>
+   <select id="selectByLimit" resultMap="BaseResultMap">
+  	select * from (select id, img_url, status, img_num, order4id, ckb, uuid, name, lownum, longnum, rectsize, resize
+  	from biz_image_detail 
+  	where order4id = #{order4id, jdbcType=BIGINT}) d WHERE d.ckb > #{eh, jdbcType=DOUBLE} or d.ckb &lt; #{el, jdbcType=DOUBLE}  ORDER BY id
+  </select>
+  
+  <select id="selectLimit" resultMap="BaseResultMap">
+    select * from 
+    (select id, img_url, status, img_num, order4id, ckb, uuid, name, lownum, longnum, rectsize, resize
+    from biz_image_detail 
+    where order4id = #{order4id, jdbcType=BIGINT} ORDER BY id) d 
+    WHERE d.ckb > #{eh, jdbcType=DOUBLE} or d.ckb &lt; #{el, jdbcType=DOUBLE} 
+    ORDER BY id 
+    limit #{pagesize} OFFSET #{offset}
+  </select>
+  
+  <select id="selectCutCount" resultType="java.lang.Integer">
+  	select count(1) from (select id, ckb
+  	from biz_image_detail 
+  	where order4id = #{order4id, jdbcType=BIGINT}) d WHERE d.ckb > #{eh, jdbcType=DOUBLE} or d.ckb &lt; #{el, jdbcType=DOUBLE}
+  </select>
+  <select id="selectAllCount" resultType="java.lang.Integer">
+  	select count(1) from biz_image_detail 
+  	where order4id = #{order4id, jdbcType=BIGINT}
+  </select>
+  <select id="selectCountByOrderId" resultType="java.lang.Integer">
+	select coalesce(sum(img_num),0) from biz_image_detail ide left join biz_image_zancun iz on 
+	ide.order4id=iz.id  where iz.orderid=#{orderid, jdbcType=BIGINT}
+  </select>
+  <select id="selecAll" resultMap="BaseResultMap">
+  select img_url, status, img_num,smallimg_url, order4id, ckb, uuid,lownum, longnum,name,rectsize,resize
+  from biz_image_detail
+  where order4id=#{order4id,jdbcType=BIGINT} and img_num=#{imgnum,jdbcType=BIGINT} 
+  and (rectsize is not null or resize is not null) ORDER BY id
+  </select>
+  <select id="selecByGroup" resultType="java.util.HashMap">
+  		select a.img_num,a.order4id,b.filepath from 
+  		biz_image_detail a left join biz_image_zancun b on a.order4id=b.id 
+  		where b.orderid=#{orderId, jdbcType=BIGINT} group by a.order4id,a.img_num,b.filepath 
+  		order by a.order4id
+  </select>
+  <select id="selectImd" parameterType="com.zdd.web.entity.ImageDetail" resultMap="BaseResultMap">
+  	select id,rectsize,img_url 
+  	from biz_image_detail 
+  	where order4id=#{order4id,jdbcType=BIGINT} and id=#{id,jdbcType=BIGINT}
+  </select>
+  <select id="selectUrl" parameterType="java.lang.Long" resultMap="BaseResultMap">
+  		select id,order4id,img_url from biz_image_detail where order4id in(select id from biz_image_zancun where orderid in(
+		select id from biz_user_zancun where id=#{id,jdbcType=BIGINT}))
+  </select>
+</mapper>

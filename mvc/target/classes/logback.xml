@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xml>
+<configuration scan="true" scanPeriod="60 seconds" debug="false">
+	<!-- 项目名 -->
+    <contextName>card-diy</contextName>
+    <!-- 日志输出路径 -->
+    <property name="LOG_HOME" value="d:/logs"></property>  
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<!-- 开发输出到控制台 -->
+	    <encoder>  
+            <pattern>%date{yyyy-MM-dd HH:mm:ss.SSS} %level [%thread][%file:%line] - %msg%n </pattern>
+        </encoder>		
+	</appender>
+	
+	<!-- 线上输出正常日志 -->	
+	<appender name="NormalLogFileAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/card-diy.log</file>  
+        <append>true</append>  
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">  
+            <fileNamePattern>${LOG_HOME}/logs-bak/card-diy.%d{yyyy-MM-dd}.%i.log.zip</fileNamePattern>
+            <!-- 大于500M备份zip -->
+            <maxFileSize>500MB</maxFileSize>  
+            <!-- 日志大于7天前的删除 -->
+            <maxHistory>7</maxHistory>
+            <!-- 日志最大30GB -->  
+            <totalSizeCap>30GB</totalSizeCap>  
+        </rollingPolicy>  
+        <encoder>  
+            <pattern>[%date{yyyy-MM-dd HH:mm:ss}] [%-5level] [%logger:%line] --%mdc{client} %msg%n</pattern>  
+        </encoder>  
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">  
+            <level>INFO</level>  
+            <onMatch>ACCEPT</onMatch>  
+            <onMismatch>DENY</onMismatch>  
+        </filter>  	
+	</appender>
+	     
+	<!-- 线上输出警告以上日志 -->	
+	<appender name="ErrorLogFileAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOG_HOME}/card-diy-error.log</file>  
+		<rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+			<FileNamePattern>${LOG_HOME}/logs-bak/card-diy-error.%d{yyyy-MM-dd}.%i.log.zip</FileNamePattern>
+            <!-- 大于500M备份zip -->
+            <maxFileSize>500MB</maxFileSize>  
+            <!-- 日志大于7天前的删除 -->
+            <maxHistory>7</maxHistory>
+            <!-- 日志最大30GB -->  
+            <totalSizeCap>30GB</totalSizeCap>    
+		</rollingPolicy>		
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} -%msg%n</pattern>
+		</encoder>
+	    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">   
+	      <level>ERROR</level>   
+	    </filter>  		
+	</appender>           
+
+  <root level="DEBUG">             
+        <appender-ref ref="STDOUT" />   
+		<appender-ref ref="NormalLogFileAppender" />
+		<appender-ref ref="ErrorLogFileAppender" />    
+  </root>  
+  <!-- rabbit禁用debug日志 -->
+  <logger name="org.springframework.amqp.rabbit.listener.BlockingQueueConsumer" level="INFO" />    
+  <logger name="org.springframework.core.task.SimpleAsyncTaskExecutor" level="INFO" /> 
+  <!-- spring日志控制 -->
+  <logger name="org.springframework" level="INFO" />
+  <logger name="org.springframework.web.servlet.mvc" level="INFO" />     
+</configuration>
